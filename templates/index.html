@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic AI Exam Preparation Assistant</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top Navigation Bar -->
+        <header class="navbar">
+            <div class="logo">
+                <i class="fa-solid fa-brain-circuit text-accent"></i>
+                <span>Antigravity <strong>Exam Prep Agent</strong></span>
+            </div>
+            
+            <div class="header-status" id="headerStatus" style="display: none;">
+                <span class="badge badge-exam" id="navSubject">Data Structures</span>
+                <span class="badge badge-countdown" id="navCountdown"><i class="fa-regular fa-clock"></i> 19 Days Left</span>
+            </div>
+
+            <div class="header-actions">
+                <button class="btn btn-outline" id="btnSettings" style="display: none;" onclick="openSettingsModal()"><i class="fa-solid fa-gear"></i> Settings</button>
+                <button class="btn btn-danger-outline" id="btnReset" style="display: none;" onclick="confirmReset()"><i class="fa-solid fa-arrow-rotate-left"></i> New Setup</button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-container">
+            
+            <!-- Setup Form View (Shown when no plan exists) -->
+            <section id="setupSection" class="card setup-card" style="display: none;">
+                <div class="setup-header">
+                    <h2><i class="fa-solid fa-rocket text-accent"></i> Setup Your AI Exam Plan</h2>
+                    <p>Enter your exam date, subject, and syllabus. The Agentic AI will automatically infer topic difficulty, study hours, priorities, and create an adaptive schedule.</p>
+                </div>
+                
+                <form id="setupForm" onsubmit="submitSetup(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="examDate"><i class="fa-regular fa-calendar"></i> Exam Date</label>
+                            <input type="date" id="examDate" required class="form-control">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subject"><i class="fa-solid fa-book"></i> Subject Name</label>
+                            <input type="text" id="subject" placeholder="e.g. Data Structures and Algorithms" required class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="syllabus"><i class="fa-solid fa-list-check"></i> Syllabus (Topics list, one per line)</label>
+                        <textarea id="syllabus" rows="9" placeholder="Arrays&#10;Linked Lists&#10;Stacks and Queues&#10;Trees&#10;Graphs&#10;Dynamic Programming&#10;Greedy Algorithms&#10;Sorting&#10;Searching" required class="form-control"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dailyHours"><i class="fa-solid fa-user-clock"></i> Available Daily Study Capacity (Hours/Day)</label>
+                        <input type="number" id="dailyHours" value="3.0" min="0.5" max="14" step="0.5" class="form-control">
+                        <small class="text-muted">Default is 3 hours/day. You can adjust this anytime from settings.</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="btnSubmitSetup">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Study Plan
+                    </button>
+                </form>
+            </section>
+
+            <!-- Dashboard View (Shown after setup) -->
+            <section id="dashboardSection" style="display: none;">
+                
+                <!-- Main Navigation Tabs -->
+                <div class="tab-nav">
+                    <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+                    <button class="tab-btn" onclick="switchTab('schedule')"><i class="fa-solid fa-calendar-days"></i> Full Schedule</button>
+                    <button class="tab-btn" onclick="switchTab('test')"><i class="fa-solid fa-file-pen"></i> Take MCQ Test</button>
+                </div>
+
+                <!-- Tab 1: Dashboard Content -->
+                <div id="tabDashboard" class="tab-content active">
+                    
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-blue"><i class="fa-regular fa-calendar-check"></i></div>
+                            <div class="stat-data">
+                                <div class="stat-value" id="statCountdown">--</div>
+                                <div class="stat-label">Days Remaining</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon icon-green"><i class="fa-solid fa-bars-progress"></i></div>
+                            <div class="stat-data">
+                                <div class="stat-value" id="statProgress">0%</div>
+                                <div class="stat-label">Overall Completion</div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" id="statProgressBar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon icon-orange"><i class="fa-solid fa-clock"></i></div>
+                            <div class="stat-data">
+                                <div class="stat-value" id="statDailyHours">3.0h</div>
+                                <div class="stat-label">Daily Capacity</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Recommendation Alert Banner -->
+                    <div class="card ai-recommendation-card">
+                        <div class="ai-rec-header">
+                            <i class="fa-solid fa-robot text-accent"></i>
+                            <h3>AI Agent Recommendation</h3>
+                        </div>
+                        <p class="ai-rec-body" id="aiRecText">Analyzing study performance...</p>
+                        <div class="ai-rec-footer" id="aiRecFooter" style="display: none;">
+                            <span class="badge badge-info" id="replanReasonTag">Schedule Adapted</span>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Main Columns Grid -->
+                    <div class="dashboard-grid">
+                        
+                        <!-- Left Main Column -->
+                        <div class="col-main">
+                            
+                            <!-- Today's Plan Card -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fa-solid fa-list-ul text-primary"></i> Today's Study Plan</h3>
+                                    <span class="badge badge-date" id="todayDate">Today</span>
+                                </div>
+                                <ul class="task-list" id="todayTaskList">
+                                    <li class="empty-state">No tasks scheduled for today.</li>
+                                </ul>
+                            </div>
+
+                            <!-- Weak Topics Card -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fa-solid fa-triangle-exclamation text-warning"></i> Weak & High-Priority Topics</h3>
+                                </div>
+                                <div class="weak-topics-list" id="weakTopicsList">
+                                    <div class="empty-state">No weak topics flagged yet.</div>
+                                </div>
+                            </div>
+
+                            <!-- Recent MCQ Tests History -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fa-solid fa-square-poll-vertical text-accent"></i> Recent Test Scores</h3>
+                                    <button class="btn btn-sm btn-outline" onclick="switchTab('test')">+ Take New Test</button>
+                                </div>
+                                <div class="test-history-list" id="testHistoryList">
+                                    <div class="empty-state">No MCQ tests taken yet.</div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: Natural Language Study Assistant Chat -->
+                        <div class="col-side">
+                            <div class="card chat-card">
+                                <div class="chat-header">
+                                    <div class="chat-title">
+                                        <i class="fa-solid fa-comments text-accent"></i>
+                                        <span><strong>Study Assistant</strong> (Gemini Tool-Calling Agent)</span>
+                                    </div>
+                                </div>
+
+                                <div class="chat-messages" id="chatMessages">
+                                    <div class="chat-message assistant">
+                                        <div class="msg-bubble">
+                                            Hello! I am your AI Exam Assistant. Ask me anything like:
+                                            <div class="quick-prompts">
+                                                <button onclick="sendQuickPrompt('What should I study today?')">"What should I study today?"</button>
+                                                <button onclick="sendQuickPrompt('I only have 1 hour today. Adjust my schedule.')">"I only have 1 hour today."</button>
+                                                <button onclick="sendQuickPrompt('Which topics am I weakest in?')">"Which topics am I weakest in?"</button>
+                                                <button onclick="sendQuickPrompt('I scored badly in Graphs. Fix my schedule.')">"I scored badly in Graphs. Fix my schedule."</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <form class="chat-input-form" onsubmit="submitChat(event)">
+                                    <input type="text" id="chatInput" placeholder="Ask assistant or adjust schedule..." autocomplete="off" class="form-control">
+                                    <button type="submit" class="btn btn-primary" id="btnSendChat"><i class="fa-solid fa-paper-plane"></i></button>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Tab 2: Full Schedule Content -->
+                <div id="tabSchedule" class="tab-content">
+                    <div class="schedule-tab-header">
+                        <div>
+                            <h2><i class="fa-solid fa-calendar-days text-primary"></i> Master Study Schedule</h2>
+                            <p class="text-muted">Day-by-day roadmap grouped by date with topics, duration, subtopics, and progress checkmarks.</p>
+                        </div>
+                        <button class="btn btn-outline" onclick="triggerManualReplan()"><i class="fa-solid fa-arrows-rotate"></i> Re-Balance Schedule</button>
+                    </div>
+
+                    <div id="scheduleCardsContainer">
+                        <!-- Dynamic Date Group Cards rendered here -->
+                    </div>
+                </div>
+
+                <!-- Tab 3: Take MCQ Test Content -->
+                <div id="tabTest" class="tab-content">
+                    
+                    <!-- Test Launcher Card -->
+                    <div class="card" id="testLauncherCard">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-file-pen text-accent"></i> Take MCQ Practice Test</h3>
+                        </div>
+                        <div class="test-config-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="testTopicSelect"><i class="fa-solid fa-book"></i> Select Topic</label>
+                                    <select id="testTopicSelect" class="form-control">
+                                        <!-- Dynamic options -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="testCountSelect"><i class="fa-solid fa-list-ol"></i> Question Count</label>
+                                    <select id="testCountSelect" class="form-control">
+                                        <option value="3">3 Questions (Quick Quiz)</option>
+                                        <option value="5" selected>5 Questions (Standard)</option>
+                                        <option value="10">10 Questions (Full Assessment)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-lg" onclick="startMCQTest()"><i class="fa-solid fa-play"></i> Start MCQ Test</button>
+                        </div>
+                    </div>
+
+                    <!-- Active Test Player Card (Hidden initially) -->
+                    <div class="card" id="testPlayerCard" style="display: none;">
+                        <div class="test-player-header">
+                            <div>
+                                <span class="badge badge-info" id="activeTestTopicTag">Topic</span>
+                                <span id="activeTestProgress">Question 1 of 5</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline" onclick="cancelTest()">Cancel</button>
+                        </div>
+
+                        <form id="mcqForm" onsubmit="submitMCQTest(event)">
+                            <div id="mcqQuestionsContainer">
+                                <!-- Dynamic questions rendered here -->
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg mt-3" id="btnSubmitTest"><i class="fa-solid fa-check"></i> Submit Test</button>
+                        </form>
+                    </div>
+
+                    <!-- Test Result Summary Card (Hidden initially) -->
+                    <div class="card" id="testResultCard" style="display: none;">
+                        <div class="test-result-header">
+                            <h2><i class="fa-solid fa-trophy text-warning"></i> Test Performance Result</h2>
+                            <div class="result-score-badge" id="resultScoreBadge">7/10 (70%)</div>
+                        </div>
+
+                        <div class="result-breakdown" id="resultBreakdown">
+                            <!-- Dynamic evaluation breakdown -->
+                        </div>
+
+                        <div class="result-actions">
+                            <button class="btn btn-primary" onclick="switchTab('dashboard')"><i class="fa-solid fa-house"></i> Back to Dashboard</button>
+                            <button class="btn btn-outline" onclick="resetTestView()"><i class="fa-solid fa-rotate-right"></i> Take Another Test</button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal" style="display: none;">
+        <div class="modal-content card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-gear text-accent"></i> Study Settings</h3>
+                <button class="modal-close" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="settingsDailyHours"><i class="fa-solid fa-user-clock"></i> Daily Study Capacity (Hours/Day)</label>
+                    <input type="number" id="settingsDailyHours" min="0.5" max="14" step="0.5" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeSettingsModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSettingsHours()">Save & Re-plan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Day Complete Celebration & Test Prompt Modal -->
+    <div id="dayCompleteModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content card" style="text-align: center; max-width: 460px; padding: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎉</div>
+            <h2 style="margin-bottom: 0.5rem; color: var(--text-main);">Daily Tasks Completed!</h2>
+            <p class="text-muted" style="margin-bottom: 1.5rem; font-size: 0.95rem;">
+                Awesome work! You have finished all study tasks for today. Would you like to take a practice MCQ test now to test your knowledge?
+            </p>
+            <div style="display: flex; gap: 0.75rem; justify-content: center;">
+                <button class="btn btn-primary btn-lg" onclick="startTestFromModal()"><i class="fa-solid fa-file-pen"></i> Take MCQ Test</button>
+                <button class="btn btn-outline btn-lg" onclick="closeDayCompleteModal()">Maybe Later</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Gemini AI is analyzing & reasoning...</div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
